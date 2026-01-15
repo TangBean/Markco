@@ -57,7 +57,7 @@
         {
           "id": "markco-sidebar",
           "title": "Markco Comments",
-          "icon": "$(comment-discussion)"
+          "icon": "media/markco.svg"
         }
       ]
     },
