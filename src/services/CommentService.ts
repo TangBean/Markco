@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { Comment, CommentAnchor, CommentData, Reply } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
-const COMMENT_BLOCK_START = '<!-- commark-comments';
+const COMMENT_BLOCK_START = '<!-- markco-comments';
 const COMMENT_BLOCK_END = '-->';
 const CURRENT_VERSION = 2;
 
@@ -126,8 +126,8 @@ export class CommentService {
     const success = await vscode.workspace.applyEdit(edit);
     
     // Debug logging
-    console.log('ComMark: applyEdit result:', success);
-    console.log('ComMark: Inserting at end of file, startIndex was:', startIndex);
+    console.log('Markco: applyEdit result:', success);
+    console.log('Markco: Inserting at end of file, startIndex was:', startIndex);
     
     // Update cache after successful edit
     if (success) {

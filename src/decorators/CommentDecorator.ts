@@ -15,7 +15,7 @@ export class CommentDecorator {
   }
 
   private createDecorationType(isFocused: boolean): vscode.TextEditorDecorationType {
-    const config = vscode.workspace.getConfiguration('commark');
+    const config = vscode.workspace.getConfiguration('markco');
     const baseColor = config.get<string>('highlightColor', 'rgba(255, 212, 0, 0.3)');
     const borderColor = config.get<string>('highlightBorderColor', 'rgba(255, 212, 0, 0.8)');
 

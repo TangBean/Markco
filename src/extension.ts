@@ -8,7 +8,7 @@ let commentDecorator: CommentDecorator;
 let sidebarProvider: CommentSidebarProvider;
 
 export function activate(context: vscode.ExtensionContext) {
-  console.log('ComMark extension is now active');
+  console.log('Markco extension is now active');
 
   // Initialize services
   commentService = new CommentService();
@@ -19,17 +19,17 @@ export function activate(context: vscode.ExtensionContext) {
     context.extensionUri,
     // Navigate callback
     (commentId: string) => {
-      console.log('ComMark: Navigate to comment:', commentId);
+      console.log('Markco: Navigate to comment:', commentId);
       const editor = vscode.window.activeTextEditor;
       if (editor && editor.document.languageId === 'markdown') {
         const comment = commentService.findComment(editor.document, commentId);
-        console.log('ComMark: Found comment:', comment);
+        console.log('Markco: Found comment:', comment);
         if (comment) {
           commentDecorator.navigateToComment(editor, comment);
           refreshDecorations(editor);
         }
       } else {
-        console.log('ComMark: No markdown editor active');
+        console.log('Markco: No markdown editor active');
       }
     },
     // Delete callback
@@ -155,25 +155,25 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Register commands
   context.subscriptions.push(
-    vscode.commands.registerCommand('commark.addComment', addCommentCommand)
+    vscode.commands.registerCommand('markco.addComment', addCommentCommand)
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('commark.deleteComment', deleteCommentCommand)
+    vscode.commands.registerCommand('markco.deleteComment', deleteCommentCommand)
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('commark.editComment', editCommentCommand)
+    vscode.commands.registerCommand('markco.editComment', editCommentCommand)
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('commark.toggleSidebar', () => {
-      vscode.commands.executeCommand('commark.commentSidebar.focus');
+    vscode.commands.registerCommand('markco.toggleSidebar', () => {
+      vscode.commands.executeCommand('markco.commentSidebar.focus');
     })
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('commark.navigateToComment', (commentId: string) => {
+    vscode.commands.registerCommand('markco.navigateToComment', (commentId: string) => {
       const editor = vscode.window.activeTextEditor;
       if (editor && editor.document.languageId === 'markdown') {
         const comment = commentService.findComment(editor.document, commentId);
@@ -349,5 +349,5 @@ function refreshDecorations(editor: vscode.TextEditor) {
 }
 
 export function deactivate() {
-  console.log('ComMark extension deactivated');
+  console.log('Markco extension deactivated');
 }

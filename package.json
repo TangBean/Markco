@@ -1,9 +1,9 @@
 {
-  "name": "commark",
-  "displayName": "ComMark - Markdown Comments",
+  "name": "markco",
+  "displayName": "Markco - Markdown Comments",
   "description": "Interactive commenting system for Markdown files with inline highlights and sidebar navigation",
   "version": "0.1.0",
-  "publisher": "commark",
+  "publisher": "markco",
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -17,46 +17,46 @@
   "contributes": {
     "commands": [
       {
-        "command": "commark.addComment",
+        "command": "markco.addComment",
         "title": "Add Comment",
-        "category": "ComMark",
+        "category": "Markco",
         "icon": "$(comment)"
       },
       {
-        "command": "commark.deleteComment",
+        "command": "markco.deleteComment",
         "title": "Delete Comment",
-        "category": "ComMark"
+        "category": "Markco"
       },
       {
-        "command": "commark.editComment",
+        "command": "markco.editComment",
         "title": "Edit Comment",
-        "category": "ComMark"
+        "category": "Markco"
       },
       {
-        "command": "commark.toggleSidebar",
+        "command": "markco.toggleSidebar",
         "title": "Toggle Comment Sidebar",
-        "category": "ComMark"
+        "category": "Markco"
       },
       {
-        "command": "commark.navigateToComment",
+        "command": "markco.navigateToComment",
         "title": "Navigate to Comment",
-        "category": "ComMark"
+        "category": "Markco"
       }
     ],
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "commark-sidebar",
-          "title": "ComMark Comments",
+          "id": "markco-sidebar",
+          "title": "Markco Comments",
           "icon": "$(comment-discussion)"
         }
       ]
     },
     "views": {
-      "commark-sidebar": [
+      "markco-sidebar": [
         {
           "type": "webview",
-          "id": "commark.commentSidebar",
+          "id": "markco.commentSidebar",
           "name": "Comments"
         }
       ]
@@ -65,35 +65,35 @@
       "editor/context": [
         {
           "when": "editorLangId == markdown && editorHasSelection",
-          "command": "commark.addComment",
-          "group": "commark"
+          "command": "markco.addComment",
+          "group": "markco"
         }
       ],
       "editor/title": [
         {
           "when": "editorLangId == markdown",
-          "command": "commark.addComment",
+          "command": "markco.addComment",
           "group": "navigation"
         }
       ]
     },
     "keybindings": [
       {
-        "command": "commark.addComment",
+        "command": "markco.addComment",
         "key": "ctrl+shift+m",
         "mac": "cmd+shift+m",
         "when": "editorLangId == markdown && editorHasSelection"
       }
     ],
     "configuration": {
-      "title": "ComMark",
+      "title": "Markco",
       "properties": {
-        "commark.highlightColor": {
+        "markco.highlightColor": {
           "type": "string",
           "default": "rgba(255, 212, 0, 0.3)",
           "description": "Background color for comment highlights"
         },
-        "commark.highlightBorderColor": {
+        "markco.highlightBorderColor": {
           "type": "string",
           "default": "rgba(255, 212, 0, 0.8)",
           "description": "Border color for comment highlights"
@@ -117,6 +117,7 @@
     "typescript": "^5.3.0"
   },
   "dependencies": {
+    "@vscode/codicons": "^0.0.44",
     "uuid": "^9.0.0"
   }
 }

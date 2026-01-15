@@ -5,7 +5,7 @@ import { Comment, SidebarMessage } from '../types';
  * Provides the webview sidebar for displaying and managing comments
  */
 export class CommentSidebarProvider implements vscode.WebviewViewProvider {
-  public static readonly viewType = 'commark.commentSidebar';
+  public static readonly viewType = 'markco.commentSidebar';
   private _view?: vscode.WebviewView;
   private _comments: Comment[] = [];
   private _focusedCommentId: string | null = null;
@@ -116,13 +116,18 @@ export class CommentSidebarProvider implements vscode.WebviewViewProvider {
       vscode.Uri.joinPath(this._extensionUri, 'media', 'sidebar.css')
     );
 
+    const codiconsUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this._extensionUri, 'node_modules', '@vscode/codicons', 'dist', 'codicon.css')
+    );
+
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'unsafe-inline';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; font-src ${webview.cspSource}; script-src 'unsafe-inline';">
   <link href="${styleUri}" rel="stylesheet">
+  <link href="${codiconsUri}" rel="stylesheet">
   <title>Comments</title>
 </head>
 <body>
@@ -167,9 +172,9 @@ export class CommentSidebarProvider implements vscode.WebviewViewProvider {
           <div class="comment-content">\${escapeHtml(comment.content)}</div>
           <div class="comment-anchor">On: "\${escapeHtml(truncate(comment.anchor.text, 40))}"</div>
           <div class="comment-actions">
-            <button class="btn-reply" onclick="event.stopPropagation(); startReply('\${comment.id}')">Reply</button>
-            <button class="btn-edit" onclick="event.stopPropagation(); startEdit('\${comment.id}')">Edit</button>
-            <button class="btn-delete" onclick="event.stopPropagation(); deleteComment('\${comment.id}')">Delete</button>
+            <button class="btn-icon btn-reply" onclick="event.stopPropagation(); startReply('\${comment.id}')" title="Reply"><i class="codicon codicon-comment"></i></button>
+            <button class="btn-icon btn-edit" onclick="event.stopPropagation(); startEdit('\${comment.id}')" title="Edit"><i class="codicon codicon-edit"></i></button>
+            <button class="btn-icon btn-delete" onclick="event.stopPropagation(); deleteComment('\${comment.id}')" title="Delete"><i class="codicon codicon-trash"></i></button>
           </div>
           \${renderReplies(comment)}
         </div>
@@ -216,8 +221,8 @@ export class CommentSidebarProvider implements vscode.WebviewViewProvider {
               </div>
               <div class="reply-content">\${escapeHtml(reply.content)}</div>
               <div class="reply-actions">
-                <button class="btn-edit-reply" onclick="startEditReply('\${comment.id}', '\${reply.id}')">Edit</button>
-                <button class="btn-delete-reply" onclick="deleteReply('\${comment.id}', '\${reply.id}')">Delete</button>
+                <button class="btn-icon btn-edit-reply" onclick="startEditReply('\${comment.id}', '\${reply.id}')" title="Edit"><i class="codicon codicon-edit"></i></button>
+                <button class="btn-icon btn-delete-reply" onclick="deleteReply('\${comment.id}', '\${reply.id}')" title="Delete"><i class="codicon codicon-trash"></i></button>
               </div>
             </div>
           \`).join('')}

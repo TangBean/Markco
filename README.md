@@ -1,4 +1,4 @@
-# ComMark - Markdown Comments
+# Markco - Markdown Comments
 
 Interactive commenting system for Markdown files in VS Code.
 
@@ -25,7 +25,7 @@ Interactive commenting system for Markdown files in VS Code.
 Comments are stored directly in the Markdown file as a JSON block in an HTML comment at the end of the file:
 
 ```markdown
-<!-- commark-comments
+<!-- markco-comments
 {
   "version": 2,
   "comments": [
