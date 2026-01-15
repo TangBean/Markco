@@ -56,16 +56,3 @@ Comments are stored directly in the Markdown file as a JSON block in an HTML com
 ```
 
 This keeps comments portable and version-control friendly.
-
-## Development
-
-```bash
-# Install dependencies
-npm install
-
-# Compile
-npm run compile
-
-# Watch mode
-npm run watch
-```

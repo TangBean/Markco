@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="Markco">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2F80ED"/>
+      <stop offset="1" stop-color="#56CCF2"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded background -->
+  <rect x="10" y="10" width="108" height="108" rx="22" fill="url(#g)"/>
+
+  <!-- Stylized comment bubble -->
+  <path d="M36 44h56a10 10 0 0 1 10 10v22a10 10 0 0 1-10 10H62l-12 10v-10H36a10 10 0 0 1-10-10V54a10 10 0 0 1 10-10z" fill="#ffffff" opacity="0.95"/>
+
+  <!-- Markdown-ish mark -->
+  <path d="M44 59v18h6V66l6 8 6-8v11h6V59h-6l-6 8-6-8h-6z" fill="#1B1F23" opacity="0.9"/>
+  <path d="M88 59v11h-4l6 7 6-7h-4V59h-4z" fill="#1B1F23" opacity="0.9"/>
+</svg>
