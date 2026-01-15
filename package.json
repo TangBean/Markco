@@ -12,6 +12,7 @@
     "url": "https://github.com/ormaoz_microsoft/Markco/issues"
   },
   "homepage": "https://github.com/ormaoz_microsoft/Markco#readme",
+  "icon": "media/markco.svg",
   "engines": {
     "vscode": "^1.85.0"
   },
