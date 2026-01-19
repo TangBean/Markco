@@ -156,6 +156,10 @@ export function activate(context: vscode.ExtensionContext) {
         const action = comment.resolved ? 'resolved' : 'reopened';
         vscode.window.showInformationMessage(`Comment ${action}`);
       }
+    },
+    // Add comment callback - triggered from sidebar button
+    () => {
+      vscode.commands.executeCommand('markco.addComment');
     }
   );
 

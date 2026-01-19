@@ -20,7 +20,8 @@ export class CommentSidebarProvider implements vscode.WebviewViewProvider {
     private readonly _onRequestReply?: (commentId: string) => void,
     private readonly _onDeleteReply?: (commentId: string, replyId: string) => void,
     private readonly _onRequestEditReply?: (commentId: string, replyId: string) => void,
-    private readonly _onResolve?: (commentId: string) => void
+    private readonly _onResolve?: (commentId: string) => void,
+    private readonly _onAddComment?: () => void
   ) {}
 
   public resolveWebviewView(
@@ -78,6 +79,11 @@ export class CommentSidebarProvider implements vscode.WebviewViewProvider {
           // Webview is ready, request current comments from extension
           if (this._onReady) {
             this._onReady();
+          }
+          break;
+        case 'addComment':
+          if (this._onAddComment) {
+            this._onAddComment();
           }
           break;
       }
@@ -139,9 +145,14 @@ export class CommentSidebarProvider implements vscode.WebviewViewProvider {
   <div id="app">
     <div class="header">
       <h3>Comments <span id="comment-count">(0)</span></h3>
-      <button id="toggle-resolved" class="btn-toggle" title="Toggle resolved comments">
-        <i class="codicon codicon-eye"></i>
-      </button>
+      <div class="header-actions">
+        <button id="add-comment-btn" class="btn-add" title="Add Comment (select text first)">
+          <i class="codicon codicon-add"></i>
+        </button>
+        <button id="toggle-resolved" class="btn-toggle" title="Toggle resolved comments">
+          <i class="codicon codicon-eye"></i>
+        </button>
+      </div>
     </div>
     <div id="comments-list" class="comments-list">
       <div class="no-comments">
@@ -311,6 +322,11 @@ export class CommentSidebarProvider implements vscode.WebviewViewProvider {
     
     // Setup toggle button
     document.getElementById('toggle-resolved').addEventListener('click', toggleResolved);
+    
+    // Setup add comment button
+    document.getElementById('add-comment-btn').addEventListener('click', function() {
+      vscode.postMessage({ type: 'addComment' });
+    });
     
     // Tell extension we're ready to receive data
     vscode.postMessage({ type: 'ready' });

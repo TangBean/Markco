@@ -48,6 +48,29 @@ body {
   letter-spacing: 0.5px;
 }
 
+.header-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.btn-add {
+  background: var(--vscode-button-background);
+  border: none;
+  color: var(--vscode-button-foreground);
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-add:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+
 .btn-toggle {
   background: transparent;
   border: none;

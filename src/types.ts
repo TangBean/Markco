@@ -78,4 +78,5 @@ export type SidebarMessage =
   | { type: 'requestEditReply'; commentId: string; replyId: string }
   | { type: 'commentDeleted'; commentId: string }
   | { type: 'commentUpdated'; comment: Comment }
-  | { type: 'ready' };
+  | { type: 'ready' }
+  | { type: 'addComment' };
