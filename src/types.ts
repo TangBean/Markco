@@ -72,11 +72,12 @@ export type SidebarMessage =
   | { type: 'deleteComment'; commentId: string }
   | { type: 'resolveComment'; commentId: string }
   | { type: 'editComment'; commentId: string; content: string }
-  | { type: 'requestEdit'; commentId: string }
-  | { type: 'requestReply'; commentId: string }
+  | { type: 'addReply'; commentId: string; content: string }
+  | { type: 'editReply'; commentId: string; replyId: string; content: string }
   | { type: 'deleteReply'; commentId: string; replyId: string }
-  | { type: 'requestEditReply'; commentId: string; replyId: string }
   | { type: 'commentDeleted'; commentId: string }
   | { type: 'commentUpdated'; comment: Comment }
   | { type: 'ready' }
-  | { type: 'addComment' };
+  | { type: 'addComment' }
+  | { type: 'showAddCommentForm'; hasSelection: boolean }
+  | { type: 'submitNewComment'; content: string };

@@ -16,12 +16,12 @@ export class CommentSidebarProvider implements vscode.WebviewViewProvider {
     private readonly _onDelete: (commentId: string) => void,
     private readonly _onEdit: (commentId: string, content: string) => void,
     private readonly _onReady?: () => void,
-    private readonly _onRequestEdit?: (commentId: string) => void,
-    private readonly _onRequestReply?: (commentId: string) => void,
+    private readonly _onAddReply?: (commentId: string, content: string) => void,
+    private readonly _onEditReply?: (commentId: string, replyId: string, content: string) => void,
     private readonly _onDeleteReply?: (commentId: string, replyId: string) => void,
-    private readonly _onRequestEditReply?: (commentId: string, replyId: string) => void,
     private readonly _onResolve?: (commentId: string) => void,
-    private readonly _onAddComment?: () => void
+    private readonly _onAddComment?: () => void,
+    private readonly _onSubmitNewComment?: (content: string) => void
   ) {}
 
   public resolveWebviewView(
@@ -50,24 +50,19 @@ export class CommentSidebarProvider implements vscode.WebviewViewProvider {
         case 'editComment':
           this._onEdit(message.commentId, message.content);
           break;
-        case 'requestEdit':
-          if (this._onRequestEdit) {
-            this._onRequestEdit(message.commentId);
+        case 'addReply':
+          if (this._onAddReply) {
+            this._onAddReply(message.commentId, message.content);
           }
           break;
-        case 'requestReply':
-          if (this._onRequestReply) {
-            this._onRequestReply(message.commentId);
+        case 'editReply':
+          if (this._onEditReply) {
+            this._onEditReply(message.commentId, message.replyId, message.content);
           }
           break;
         case 'deleteReply':
           if (this._onDeleteReply) {
             this._onDeleteReply(message.commentId, message.replyId);
-          }
-          break;
-        case 'requestEditReply':
-          if (this._onRequestEditReply) {
-            this._onRequestEditReply(message.commentId, message.replyId);
           }
           break;
         case 'resolveComment':
@@ -84,6 +79,11 @@ export class CommentSidebarProvider implements vscode.WebviewViewProvider {
         case 'addComment':
           if (this._onAddComment) {
             this._onAddComment();
+          }
+          break;
+        case 'submitNewComment':
+          if (this._onSubmitNewComment) {
+            this._onSubmitNewComment(message.content);
           }
           break;
       }
@@ -123,6 +123,18 @@ export class CommentSidebarProvider implements vscode.WebviewViewProvider {
     }
   }
 
+  /**
+   * Show the add comment form in the sidebar
+   */
+  public showAddCommentForm(hasSelection: boolean): void {
+    if (this._view) {
+      this._view.webview.postMessage({
+        type: 'showAddCommentForm',
+        hasSelection: hasSelection
+      } as SidebarMessage);
+    }
+  }
+
   private _getHtmlContent(webview: vscode.Webview): string {
     const styleUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this._extensionUri, 'media', 'sidebar.css')
@@ -154,6 +166,26 @@ export class CommentSidebarProvider implements vscode.WebviewViewProvider {
         </button>
       </div>
     </div>
+    
+    <!-- Add Comment Form -->
+    <div id="add-comment-form" class="input-form hidden">
+      <div class="form-header">
+        <span>New Comment</span>
+        <button class="btn-icon btn-close" onclick="hideAddCommentForm()" title="Cancel">
+          <i class="codicon codicon-close"></i>
+        </button>
+      </div>
+      <div id="selection-warning" class="form-warning hidden">
+        <i class="codicon codicon-warning"></i>
+        <span>Please select text in the editor first</span>
+      </div>
+      <textarea id="new-comment-input" class="form-input" placeholder="Type your comment..." rows="3"></textarea>
+      <div class="form-actions">
+        <button class="btn-secondary" onclick="hideAddCommentForm()">Cancel</button>
+        <button class="btn-primary" onclick="submitNewComment()">Add Comment</button>
+      </div>
+    </div>
+    
     <div id="comments-list" class="comments-list">
       <div class="no-comments">
         <p>No comments yet.</p>
@@ -165,7 +197,9 @@ export class CommentSidebarProvider implements vscode.WebviewViewProvider {
   <script>
     const vscode = acquireVsCodeApi();
     let comments = [];
-    let editingId = null;
+    let editingCommentId = null;
+    let editingReplyId = null;
+    let replyingToCommentId = null;
     let showResolved = true;
 
     function toggleResolved() {
@@ -182,6 +216,40 @@ export class CommentSidebarProvider implements vscode.WebviewViewProvider {
         toggleBtn.classList.add('hidden-resolved');
       }
       renderComments();
+    }
+
+    function showAddCommentForm(hasSelection) {
+      const form = document.getElementById('add-comment-form');
+      const warning = document.getElementById('selection-warning');
+      const input = document.getElementById('new-comment-input');
+      
+      form.classList.remove('hidden');
+      
+      if (!hasSelection) {
+        warning.classList.remove('hidden');
+        input.disabled = true;
+      } else {
+        warning.classList.add('hidden');
+        input.disabled = false;
+        input.focus();
+      }
+    }
+
+    function hideAddCommentForm() {
+      const form = document.getElementById('add-comment-form');
+      const input = document.getElementById('new-comment-input');
+      form.classList.add('hidden');
+      input.value = '';
+      input.disabled = false;
+    }
+
+    function submitNewComment() {
+      const input = document.getElementById('new-comment-input');
+      const content = input.value.trim();
+      if (content) {
+        vscode.postMessage({ type: 'submitNewComment', content: content });
+        hideAddCommentForm();
+      }
     }
 
     function renderComments() {
@@ -207,21 +275,70 @@ export class CommentSidebarProvider implements vscode.WebviewViewProvider {
             <span class="comment-author">\${escapeHtml(comment.author)}</span>
             <span class="comment-date">\${formatDate(comment.createdAt)}</span>
           </div>
-          <div class="comment-content">\${escapeHtml(comment.content)}</div>
+          \${editingCommentId === comment.id ? renderEditCommentForm(comment) : \`
+            <div class="comment-content">\${escapeHtml(comment.content)}</div>
+          \`}
           <div class="comment-anchor">On: "\${escapeHtml(truncate(comment.anchor.text, 40))}"</div>
-          <div class="comment-actions">
-            <div class="actions-left">
-              <button class="btn-icon btn-reply" onclick="event.stopPropagation(); startReply('\${comment.id}')" title="Reply"><i class="codicon codicon-comment"></i></button>
-              <button class="btn-icon btn-edit" onclick="event.stopPropagation(); startEdit('\${comment.id}')" title="Edit"><i class="codicon codicon-edit"></i></button>
+          \${editingCommentId !== comment.id ? \`
+            <div class="comment-actions">
+              <div class="actions-left">
+                <button class="btn-icon btn-reply" onclick="event.stopPropagation(); startReply('\${comment.id}')" title="Reply"><i class="codicon codicon-comment"></i></button>
+                <button class="btn-icon btn-edit" onclick="event.stopPropagation(); startEditComment('\${comment.id}')" title="Edit"><i class="codicon codicon-edit"></i></button>
+              </div>
+              <div class="actions-right">
+                <button class="btn-icon btn-resolve \${comment.resolved ? 'resolved' : ''}" onclick="event.stopPropagation(); resolveComment('\${comment.id}')" title="\${comment.resolved ? 'Reopen' : 'Resolve'}"><i class="codicon codicon-\${comment.resolved ? 'issue-reopened' : 'check'}"></i></button>
+                <button class="btn-icon btn-delete" onclick="event.stopPropagation(); deleteComment('\${comment.id}')" title="Delete"><i class="codicon codicon-trash"></i></button>
+              </div>
             </div>
-            <div class="actions-right">
-              <button class="btn-icon btn-resolve \${comment.resolved ? 'resolved' : ''}" onclick="event.stopPropagation(); resolveComment('\${comment.id}')" title="\${comment.resolved ? 'Reopen' : 'Resolve'}"><i class="codicon codicon-\${comment.resolved ? 'issue-reopened' : 'check'}"></i></button>
-              <button class="btn-icon btn-delete" onclick="event.stopPropagation(); deleteComment('\${comment.id}')" title="Delete"><i class="codicon codicon-trash"></i></button>
-            </div>
-          </div>
+          \` : ''}
           \${renderReplies(comment)}
+          \${replyingToCommentId === comment.id ? renderReplyForm(comment.id) : ''}
         </div>
       \`).join('');
+      
+      // Focus on any active input
+      setTimeout(() => {
+        const activeInput = document.querySelector('.edit-input:not([disabled]), .reply-input:not([disabled])');
+        if (activeInput) {
+          activeInput.focus();
+        }
+      }, 0);
+    }
+
+    function renderEditCommentForm(comment) {
+      return \`
+        <div class="inline-form" onclick="event.stopPropagation()">
+          <textarea class="edit-input" id="edit-comment-\${comment.id}" rows="2">\${escapeHtml(comment.content)}</textarea>
+          <div class="inline-form-actions">
+            <button class="btn-secondary btn-sm" onclick="cancelEditComment()">Cancel</button>
+            <button class="btn-primary btn-sm" onclick="saveEditComment('\${comment.id}')">Save</button>
+          </div>
+        </div>
+      \`;
+    }
+
+    function renderReplyForm(commentId) {
+      return \`
+        <div class="inline-form reply-form" onclick="event.stopPropagation()">
+          <textarea class="reply-input" id="reply-input-\${commentId}" placeholder="Type your reply..." rows="2"></textarea>
+          <div class="inline-form-actions">
+            <button class="btn-secondary btn-sm" onclick="cancelReply()">Cancel</button>
+            <button class="btn-primary btn-sm" onclick="submitReply('\${commentId}')">Reply</button>
+          </div>
+        </div>
+      \`;
+    }
+
+    function renderEditReplyForm(commentId, reply) {
+      return \`
+        <div class="inline-form" onclick="event.stopPropagation()">
+          <textarea class="edit-input" id="edit-reply-\${reply.id}" rows="2">\${escapeHtml(reply.content)}</textarea>
+          <div class="inline-form-actions">
+            <button class="btn-secondary btn-sm" onclick="cancelEditReply()">Cancel</button>
+            <button class="btn-primary btn-sm" onclick="saveEditReply('\${commentId}', '\${reply.id}')">Save</button>
+          </div>
+        </div>
+      \`;
     }
 
     function navigateToComment(id) {
@@ -236,22 +353,71 @@ export class CommentSidebarProvider implements vscode.WebviewViewProvider {
       vscode.postMessage({ type: 'resolveComment', commentId: id });
     }
 
-    function startEdit(id) {
-      // Send request to extension to show input box (prompt doesn't work in webviews)
-      vscode.postMessage({ type: 'requestEdit', commentId: id });
+    function startEditComment(id) {
+      editingCommentId = id;
+      editingReplyId = null;
+      replyingToCommentId = null;
+      renderComments();
+    }
+
+    function cancelEditComment() {
+      editingCommentId = null;
+      renderComments();
+    }
+
+    function saveEditComment(id) {
+      const input = document.getElementById('edit-comment-' + id);
+      const content = input.value.trim();
+      if (content) {
+        vscode.postMessage({ type: 'editComment', commentId: id, content: content });
+        editingCommentId = null;
+      }
     }
 
     function startReply(commentId) {
-      // Send request to extension to show input box for reply
-      vscode.postMessage({ type: 'requestReply', commentId: commentId });
+      replyingToCommentId = commentId;
+      editingCommentId = null;
+      editingReplyId = null;
+      renderComments();
+    }
+
+    function cancelReply() {
+      replyingToCommentId = null;
+      renderComments();
+    }
+
+    function submitReply(commentId) {
+      const input = document.getElementById('reply-input-' + commentId);
+      const content = input.value.trim();
+      if (content) {
+        vscode.postMessage({ type: 'addReply', commentId: commentId, content: content });
+        replyingToCommentId = null;
+      }
+    }
+
+    function startEditReply(commentId, replyId) {
+      editingReplyId = { commentId, replyId };
+      editingCommentId = null;
+      replyingToCommentId = null;
+      renderComments();
+    }
+
+    function cancelEditReply() {
+      editingReplyId = null;
+      renderComments();
+    }
+
+    function saveEditReply(commentId, replyId) {
+      const input = document.getElementById('edit-reply-' + replyId);
+      const content = input.value.trim();
+      if (content) {
+        vscode.postMessage({ type: 'editReply', commentId: commentId, replyId: replyId, content: content });
+        editingReplyId = null;
+      }
     }
 
     function deleteReply(commentId, replyId) {
       vscode.postMessage({ type: 'deleteReply', commentId: commentId, replyId: replyId });
-    }
-
-    function startEditReply(commentId, replyId) {
-      vscode.postMessage({ type: 'requestEditReply', commentId: commentId, replyId: replyId });
     }
 
     function renderReplies(comment) {
@@ -266,11 +432,13 @@ export class CommentSidebarProvider implements vscode.WebviewViewProvider {
                 <span class="reply-author">\${escapeHtml(reply.author)}</span>
                 <span class="reply-date">\${formatDate(reply.createdAt)}</span>
               </div>
-              <div class="reply-content">\${escapeHtml(reply.content)}</div>
-              <div class="reply-actions">
-                <button class="btn-icon btn-edit-reply" onclick="startEditReply('\${comment.id}', '\${reply.id}')" title="Edit"><i class="codicon codicon-edit"></i></button>
-                <button class="btn-icon btn-delete-reply" onclick="deleteReply('\${comment.id}', '\${reply.id}')" title="Delete"><i class="codicon codicon-trash"></i></button>
-              </div>
+              \${editingReplyId && editingReplyId.replyId === reply.id ? renderEditReplyForm(comment.id, reply) : \`
+                <div class="reply-content">\${escapeHtml(reply.content)}</div>
+                <div class="reply-actions">
+                  <button class="btn-icon btn-edit-reply" onclick="startEditReply('\${comment.id}', '\${reply.id}')" title="Edit"><i class="codicon codicon-edit"></i></button>
+                  <button class="btn-icon btn-delete-reply" onclick="deleteReply('\${comment.id}', '\${reply.id}')" title="Delete"><i class="codicon codicon-trash"></i></button>
+                </div>
+              \`}
             </div>
           \`).join('')}
         </div>
@@ -304,15 +472,54 @@ export class CommentSidebarProvider implements vscode.WebviewViewProvider {
       return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
+    // Handle keyboard shortcuts in textareas
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        if (editingCommentId) {
+          cancelEditComment();
+        } else if (editingReplyId) {
+          cancelEditReply();
+        } else if (replyingToCommentId) {
+          cancelReply();
+        } else {
+          hideAddCommentForm();
+        }
+      }
+      
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        const activeEl = document.activeElement;
+        if (activeEl.id === 'new-comment-input') {
+          submitNewComment();
+        } else if (activeEl.classList.contains('edit-input')) {
+          const id = activeEl.id.replace('edit-comment-', '').replace('edit-reply-', '');
+          if (activeEl.id.startsWith('edit-comment-')) {
+            saveEditComment(id);
+          } else if (editingReplyId) {
+            saveEditReply(editingReplyId.commentId, editingReplyId.replyId);
+          }
+        } else if (activeEl.classList.contains('reply-input')) {
+          const commentId = activeEl.id.replace('reply-input-', '');
+          submitReply(commentId);
+        }
+      }
+    });
+
     window.addEventListener('message', event => {
       const message = event.data;
       switch (message.type) {
         case 'refresh':
           comments = message.comments || [];
+          // Reset editing states on refresh
+          editingCommentId = null;
+          editingReplyId = null;
+          replyingToCommentId = null;
           renderComments();
           break;
         case 'focusComment':
           focusComment(message.commentId);
+          break;
+        case 'showAddCommentForm':
+          showAddCommentForm(message.hasSelection);
           break;
       }
     });

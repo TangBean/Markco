@@ -307,3 +307,130 @@ kbd {
 .comments-list::-webkit-scrollbar-thumb:hover {
   background: var(--vscode-scrollbarSlider-hoverBackground);
 }
+
+/* Input form styles */
+.input-form {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--vscode-editor-background);
+}
+
+.input-form.hidden {
+  display: none;
+}
+
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.form-warning {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  margin-bottom: 8px;
+  background: var(--vscode-inputValidation-warningBackground);
+  border: 1px solid var(--vscode-inputValidation-warningBorder);
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--vscode-inputValidation-warningForeground);
+}
+
+.form-warning.hidden {
+  display: none;
+}
+
+.form-input,
+.edit-input,
+.reply-input {
+  width: 100%;
+  padding: 8px;
+  background: var(--input-bg);
+  color: var(--input-fg);
+  border: 1px solid var(--input-border);
+  border-radius: 4px;
+  font-family: var(--vscode-font-family);
+  font-size: 13px;
+  resize: vertical;
+  min-height: 60px;
+}
+
+.form-input:focus,
+.edit-input:focus,
+.reply-input:focus {
+  outline: none;
+  border-color: var(--vscode-focusBorder);
+}
+
+.form-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.form-actions,
+.inline-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.btn-primary {
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.btn-primary:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+
+.btn-secondary {
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.btn-secondary:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.btn-sm {
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+.btn-close {
+  padding: 2px 4px;
+}
+
+/* Inline form styles */
+.inline-form {
+  margin: 8px 0;
+}
+
+.inline-form .edit-input,
+.inline-form .reply-input {
+  min-height: 50px;
+}
+
+.reply-form {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}

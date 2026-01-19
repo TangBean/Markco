@@ -40,12 +40,13 @@ export function activate(context: vscode.ExtensionContext) {
         refreshAll(editor);
       }
     },
-    // Edit callback
+    // Edit callback - now receives content directly from sidebar
     async (commentId: string, content: string) => {
       const editor = vscode.window.activeTextEditor;
       if (editor && editor.document.languageId === 'markdown') {
         await commentService.updateComment(editor.document, commentId, content);
         refreshAll(editor);
+        vscode.window.showInformationMessage('Comment updated');
       }
     },
     // Ready callback - sidebar is ready to receive data
@@ -55,54 +56,29 @@ export function activate(context: vscode.ExtensionContext) {
         refreshAll(editor);
       }
     },
-    // Request edit callback - show VS Code input box for editing
-    async (commentId: string) => {
+    // Add reply callback - receives content directly from sidebar
+    async (commentId: string, content: string) => {
       const editor = vscode.window.activeTextEditor;
       if (!editor || editor.document.languageId !== 'markdown') {
         return;
       }
 
-      const comment = commentService.findComment(editor.document, commentId);
-      if (!comment) {
-        return;
-      }
-
-      const newContent = await vscode.window.showInputBox({
-        prompt: 'Edit your comment',
-        value: comment.content,
-        validateInput: (value) => {
-          return value.trim() ? null : 'Comment cannot be empty';
-        }
-      });
-
-      if (newContent && newContent.trim() !== comment.content) {
-        await commentService.updateComment(editor.document, commentId, newContent.trim());
+      const reply = await commentService.addReply(editor.document, commentId, content);
+      if (reply) {
         refreshAll(editor);
-        vscode.window.showInformationMessage('Comment updated');
+        vscode.window.showInformationMessage('Reply added');
       }
     },
-    // Request reply callback - show VS Code input box for adding a reply
-    async (commentId: string) => {
+    // Edit reply callback - receives content directly from sidebar
+    async (commentId: string, replyId: string, content: string) => {
       const editor = vscode.window.activeTextEditor;
       if (!editor || editor.document.languageId !== 'markdown') {
         return;
       }
 
-      const replyContent = await vscode.window.showInputBox({
-        prompt: 'Enter your reply',
-        placeHolder: 'Type your reply here...',
-        validateInput: (value) => {
-          return value.trim() ? null : 'Reply cannot be empty';
-        }
-      });
-
-      if (replyContent) {
-        const reply = await commentService.addReply(editor.document, commentId, replyContent.trim());
-        if (reply) {
-          refreshAll(editor);
-          vscode.window.showInformationMessage('Reply added');
-        }
-      }
+      await commentService.updateReply(editor.document, commentId, replyId, content);
+      refreshAll(editor);
+      vscode.window.showInformationMessage('Reply updated');
     },
     // Delete reply callback
     async (commentId: string, replyId: string) => {
@@ -115,32 +91,6 @@ export function activate(context: vscode.ExtensionContext) {
       if (success) {
         refreshAll(editor);
         vscode.window.showInformationMessage('Reply deleted');
-      }
-    },
-    // Request edit reply callback - show VS Code input box for editing a reply
-    async (commentId: string, replyId: string) => {
-      const editor = vscode.window.activeTextEditor;
-      if (!editor || editor.document.languageId !== 'markdown') {
-        return;
-      }
-
-      const reply = commentService.findReply(editor.document, commentId, replyId);
-      if (!reply) {
-        return;
-      }
-
-      const newContent = await vscode.window.showInputBox({
-        prompt: 'Edit your reply',
-        value: reply.content,
-        validateInput: (value) => {
-          return value.trim() ? null : 'Reply cannot be empty';
-        }
-      });
-
-      if (newContent && newContent.trim() !== reply.content) {
-        await commentService.updateReply(editor.document, commentId, replyId, newContent.trim());
-        refreshAll(editor);
-        vscode.window.showInformationMessage('Reply updated');
       }
     },
     // Resolve comment callback
@@ -157,9 +107,42 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showInformationMessage(`Comment ${action}`);
       }
     },
-    // Add comment callback - triggered from sidebar button
+    // Add comment callback - triggered from sidebar button, shows form in sidebar
     () => {
-      vscode.commands.executeCommand('markco.addComment');
+      const editor = vscode.window.activeTextEditor;
+      if (!editor || editor.document.languageId !== 'markdown') {
+        vscode.window.showErrorMessage('Please open a Markdown file to add comments');
+        return;
+      }
+      
+      if (editor.selection.isEmpty) {
+        vscode.window.showErrorMessage('Please select some text to comment on');
+        return;
+      }
+      
+      sidebarProvider.showAddCommentForm(true);
+    },
+    // Submit new comment callback - receives content from sidebar form
+    async (content: string) => {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor || editor.document.languageId !== 'markdown') {
+        vscode.window.showErrorMessage('Please open a Markdown file to add comments');
+        return;
+      }
+
+      const selection = editor.selection;
+      if (selection.isEmpty) {
+        vscode.window.showErrorMessage('Please select some text to comment on');
+        return;
+      }
+
+      const comment = await commentService.addComment(editor.document, selection, content);
+      if (comment) {
+        refreshAll(editor);
+        vscode.window.showInformationMessage('Comment added successfully');
+      } else {
+        vscode.window.showErrorMessage('Failed to add comment');
+      }
     }
   );
 
@@ -264,25 +247,9 @@ async function addCommentCommand() {
     return;
   }
 
-  const content = await vscode.window.showInputBox({
-    prompt: 'Enter your comment',
-    placeHolder: 'Type your comment here...',
-    validateInput: (value) => {
-      return value.trim() ? null : 'Comment cannot be empty';
-    }
-  });
-
-  if (!content) {
-    return;
-  }
-
-  const comment = await commentService.addComment(editor.document, selection, content.trim());
-  if (comment) {
-    refreshAll(editor);
-    vscode.window.showInformationMessage('Comment added successfully');
-  } else {
-    vscode.window.showErrorMessage('Failed to add comment');
-  }
+  // Show the sidebar and open the add comment form
+  await vscode.commands.executeCommand('markco.commentSidebar.focus');
+  sidebarProvider.showAddCommentForm(true);
 }
 
 async function deleteCommentCommand(commentId?: string) {
@@ -335,24 +302,9 @@ async function editCommentCommand(commentId?: string) {
     }
   }
 
-  const comment = commentService.findComment(editor.document, commentId);
-  if (!comment) {
-    return;
-  }
-
-  const newContent = await vscode.window.showInputBox({
-    prompt: 'Edit your comment',
-    value: comment.content,
-    validateInput: (value) => {
-      return value.trim() ? null : 'Comment cannot be empty';
-    }
-  });
-
-  if (newContent && newContent.trim() !== comment.content) {
-    await commentService.updateComment(editor.document, commentId, newContent.trim());
-    refreshAll(editor);
-    vscode.window.showInformationMessage('Comment updated');
-  }
+  // Focus the sidebar and navigate to the comment for inline editing
+  await vscode.commands.executeCommand('markco.commentSidebar.focus');
+  sidebarProvider.focusComment(commentId);
 }
 
 function refreshAll(editor: vscode.TextEditor) {
