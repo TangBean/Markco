@@ -1,5 +1,5 @@
 ---
-name: increase-version-package-vsix
+name: package
 description: Guide for increasing the version and packaging a VSIX extension
 ---
 # Plus One Publish
