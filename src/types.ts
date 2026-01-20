@@ -48,6 +48,8 @@ export interface Comment {
   updatedAt?: string;
   /** Whether the comment is resolved */
   resolved?: boolean;
+  /** Whether the anchor text was deleted and can't be found */
+  orphaned?: boolean;
   /** Replies to this comment */
   replies?: Reply[];
 }
@@ -71,6 +73,7 @@ export type SidebarMessage =
   | { type: 'navigateToComment'; commentId: string }
   | { type: 'deleteComment'; commentId: string }
   | { type: 'resolveComment'; commentId: string }
+  | { type: 'reAnchorComment'; commentId: string }
   | { type: 'editComment'; commentId: string; content: string }
   | { type: 'addReply'; commentId: string; content: string }
   | { type: 'editReply'; commentId: string; replyId: string; content: string }

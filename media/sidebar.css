@@ -238,6 +238,56 @@ kbd {
   text-decoration: line-through;
 }
 
+/* Orphaned comment styles */
+.comment-item.orphaned {
+  border-color: var(--vscode-inputValidation-warningBorder);
+  background: var(--vscode-inputValidation-warningBackground);
+}
+
+.comment-item.orphaned .comment-anchor {
+  color: var(--vscode-errorForeground);
+}
+
+.orphaned-warning {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  margin-bottom: 8px;
+  background: var(--vscode-inputValidation-warningBackground);
+  border: 1px solid var(--vscode-inputValidation-warningBorder);
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--vscode-inputValidation-warningForeground);
+}
+
+.orphaned-warning i {
+  color: var(--vscode-problemsWarningIcon-foreground);
+}
+
+.btn-reanchor {
+  margin-left: auto;
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border: none;
+  padding: 3px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: background-color 0.15s ease;
+}
+
+.btn-reanchor:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+
+.btn-reanchor i {
+  color: inherit;
+}
+
 /* Reply styles */
 .replies-container {
   margin-top: 12px;

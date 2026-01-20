@@ -143,6 +143,28 @@ export function activate(context: vscode.ExtensionContext) {
       } else {
         vscode.window.showErrorMessage('Failed to add comment');
       }
+    },
+    // Re-anchor callback - re-anchors an orphaned comment to current selection
+    async (commentId: string) => {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor || editor.document.languageId !== 'markdown') {
+        vscode.window.showErrorMessage('Please open a Markdown file');
+        return;
+      }
+
+      const selection = editor.selection;
+      if (selection.isEmpty) {
+        vscode.window.showErrorMessage('Please select text in the editor to re-anchor this comment');
+        return;
+      }
+
+      const comment = await commentService.reAnchorComment(editor.document, commentId, selection);
+      if (comment) {
+        refreshAll(editor);
+        vscode.window.showInformationMessage('Comment re-anchored successfully');
+      } else {
+        vscode.window.showErrorMessage('Failed to re-anchor comment');
+      }
     }
   );
 

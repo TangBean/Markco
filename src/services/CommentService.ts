@@ -408,8 +408,44 @@ export class CommentService {
   }
 
   /**
+   * Re-anchor a comment to a new selection
+   */
+  async reAnchorComment(
+    document: vscode.TextDocument,
+    commentId: string,
+    selection: vscode.Selection
+  ): Promise<Comment | null> {
+    const selectedText = document.getText(selection);
+    if (!selectedText.trim()) {
+      return null;
+    }
+
+    const comments = this.getComments(document);
+    const comment = comments.find(c => c.id === commentId);
+
+    if (!comment) {
+      return null;
+    }
+
+    // Update anchor with new selection
+    comment.anchor = {
+      text: selectedText,
+      startLine: selection.start.line,
+      startChar: selection.start.character,
+      endLine: selection.end.line,
+      endChar: selection.end.character
+    };
+    comment.orphaned = false;
+    comment.updatedAt = new Date().toISOString();
+
+    const success = await this.saveComments(document, comments);
+    return success ? comment : null;
+  }
+
+  /**
    * Reconcile comment anchors after document changes
    * Attempts to re-locate anchors by finding the anchor text near its expected position
+   * Marks comments as orphaned if their anchor text can no longer be found
    */
   async reconcileAnchors(document: vscode.TextDocument): Promise<void> {
     const comments = this.getComments(document);
@@ -417,13 +453,22 @@ export class CommentService {
 
     for (const comment of comments) {
       const newAnchor = this.findAnchorInDocument(document, comment.anchor);
-      if (newAnchor && (
-        newAnchor.startLine !== comment.anchor.startLine ||
-        newAnchor.startChar !== comment.anchor.startChar ||
-        newAnchor.endLine !== comment.anchor.endLine ||
-        newAnchor.endChar !== comment.anchor.endChar
-      )) {
-        comment.anchor = newAnchor;
+      if (newAnchor) {
+        // Anchor found - update position if changed and clear orphaned flag
+        if (
+          newAnchor.startLine !== comment.anchor.startLine ||
+          newAnchor.startChar !== comment.anchor.startChar ||
+          newAnchor.endLine !== comment.anchor.endLine ||
+          newAnchor.endChar !== comment.anchor.endChar ||
+          comment.orphaned
+        ) {
+          comment.anchor = newAnchor;
+          comment.orphaned = false;
+          modified = true;
+        }
+      } else if (!comment.orphaned) {
+        // Anchor text not found - mark as orphaned
+        comment.orphaned = true;
         modified = true;
       }
     }

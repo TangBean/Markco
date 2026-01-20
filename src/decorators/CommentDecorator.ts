@@ -40,8 +40,8 @@ export class CommentDecorator {
     const focusedRanges: vscode.DecorationOptions[] = [];
 
     for (const comment of comments) {
-      // Skip resolved comments - they should not be highlighted
-      if (comment.resolved) {
+      // Skip resolved or orphaned comments - they should not be highlighted
+      if (comment.resolved || comment.orphaned) {
         continue;
       }
 

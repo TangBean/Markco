@@ -21,7 +21,8 @@ export class CommentSidebarProvider implements vscode.WebviewViewProvider {
     private readonly _onDeleteReply?: (commentId: string, replyId: string) => void,
     private readonly _onResolve?: (commentId: string) => void,
     private readonly _onAddComment?: () => void,
-    private readonly _onSubmitNewComment?: (content: string) => void
+    private readonly _onSubmitNewComment?: (content: string) => void,
+    private readonly _onReAnchor?: (commentId: string) => void
   ) {}
 
   public resolveWebviewView(
@@ -84,6 +85,11 @@ export class CommentSidebarProvider implements vscode.WebviewViewProvider {
         case 'submitNewComment':
           if (this._onSubmitNewComment) {
             this._onSubmitNewComment(message.content);
+          }
+          break;
+        case 'reAnchorComment':
+          if (this._onReAnchor) {
+            this._onReAnchor(message.commentId);
           }
           break;
       }
@@ -270,11 +276,20 @@ export class CommentSidebarProvider implements vscode.WebviewViewProvider {
       }
 
       container.innerHTML = filteredComments.map(comment => \`
-        <div class="comment-item \${comment.resolved ? 'resolved' : ''}" data-id="\${comment.id}" onclick="navigateToComment('\${comment.id}')">
+        <div class="comment-item \${comment.resolved ? 'resolved' : ''} \${comment.orphaned ? 'orphaned' : ''}" data-id="\${comment.id}" onclick="navigateToComment('\${comment.id}')">
           <div class="comment-header">
             <span class="comment-author">\${escapeHtml(comment.author)}</span>
             <span class="comment-date">\${formatDate(comment.createdAt)}</span>
           </div>
+          \${comment.orphaned ? \`
+            <div class="orphaned-warning">
+              <i class="codicon codicon-warning"></i>
+              <span>Anchor text deleted</span>
+              <button class="btn-reanchor" onclick="event.stopPropagation(); reAnchorComment('\${comment.id}')" title="Select text in editor, then click to re-anchor">
+                <i class="codicon codicon-pin"></i> Re-anchor
+              </button>
+            </div>
+          \` : ''}
           \${editingCommentId === comment.id ? renderEditCommentForm(comment) : \`
             <div class="comment-content">\${escapeHtml(comment.content)}</div>
           \`}
@@ -351,6 +366,10 @@ export class CommentSidebarProvider implements vscode.WebviewViewProvider {
 
     function resolveComment(id) {
       vscode.postMessage({ type: 'resolveComment', commentId: id });
+    }
+
+    function reAnchorComment(id) {
+      vscode.postMessage({ type: 'reAnchorComment', commentId: id });
     }
 
     function startEditComment(id) {
