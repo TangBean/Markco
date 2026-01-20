@@ -69,28 +69,14 @@ Comments are stored directly in the Markdown file as a JSON block in an HTML com
   ]
 }
 -->
-```
-KG-->>AMO: Single template match
+``` 
+
 This keeps comments portable and version-control friendly.
 
 
 <!-- markco-comments
 {
   "version": 2,
-  "comments": [
-    {
-      "id": "bc4237a1-ec89-4289-ab74-85026a17705d",
-      "anchor": {
-        "text": "KG-->>AMO: Single template match",
-        "startLine": 72,
-        "startChar": 0,
-        "endLine": 72,
-        "endChar": 32
-      },
-      "content": "broken comment",
-      "author": "Oren Maoz",
-      "createdAt": "2026-01-20T07:21:36.058Z"
-    }
-  ]
+  "comments": []
 }
 -->
