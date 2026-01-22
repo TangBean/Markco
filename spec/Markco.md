@@ -200,7 +200,9 @@ markco/
       },
       "content": "Nice overview",
       "author": "Oren Maoz",
-      "createdAt": "2026-01-22T10:36:15.701Z"
+      "createdAt": "2026-01-22T10:36:15.701Z",
+      "resolved": true,
+      "updatedAt": "2026-01-22T13:08:07.491Z"
     },
     {
       "id": "7c2fe2ce-8732-46b8-be07-020eb1c86d32",
@@ -227,6 +229,19 @@ markco/
       "content": "Is this the right place to add the configuration and settings for Marcko?",
       "author": "Oren Maoz",
       "createdAt": "2026-01-22T11:29:21.246Z"
+    },
+    {
+      "id": "9061e712-71a8-45c7-b913-1b56ec720731",
+      "anchor": {
+        "text": "[package.json](package.json)",
+        "startLine": 64,
+        "startChar": 5,
+        "endLine": 64,
+        "endChar": 33
+      },
+      "content": "Make sure Dave review this file",
+      "author": "Oren Maoz",
+      "createdAt": "2026-01-22T13:08:33.236Z"
     }
   ]
 }

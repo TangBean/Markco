@@ -40,6 +40,15 @@
       }
     },
     {
+      "label": "Package",
+      "type": "shell",
+      "command": "vsce package -o .vsix/",
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      }
+    },
+    {
       "label": "Lint",
       "type": "shell",
       "command": "npm run lint",
