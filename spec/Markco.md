@@ -1,10 +1,10 @@
-## Plan: Interactive Markdown Commenting Extension (Markco)
+# Interactive Markdown Commenting Extension (Markco)
 
 A VS Code extension that enables inline commenting in Markdown files with a dedicated comment sidebar for navigation and management. Uses VS Code's native text editor with `TextEditorDecorationType` for highlighting, a `WebviewViewProvider` for the sidebar panel, and a markdown-it plugin for preview highlighting.
 
-### Architecture Overview
+## Architecture Overview
 
-```
+```ascii
 ┌─────────────────────────────────────────────────────────────┐
 │                    VS Code Window                           │
 ├──────────────────────────────────┬──────────────────────────┤
@@ -48,13 +48,13 @@ A VS Code extension that enables inline commenting in Markdown files with a dedi
    - `getGitUserName(document)` - Get Git user.name for author field
    - `sanitizeForStorage()` / `restoreFromStorage()` - Handle `-->` in text to prevent breaking HTML comment block
 
-3. **Create CommentDecorator** in [src/decorators/CommentDecorator.ts](src/decorators/CommentDecorator.ts):
+1. **Create CommentDecorator** in [src/decorators/CommentDecorator.ts](src/decorators/CommentDecorator.ts):
    - `TextEditorDecorationType` for comment highlights (background color, border)
    - `applyDecorations(editor, comments)` - Set decoration ranges from comment anchors
    - `clearDecorations(editor)` - Remove all decorations
    - Listen to `onDidChangeTextDocument` to update decorations in real-time
 
-4. **Create CommentSidebarProvider** in [src/providers/CommentSidebarProvider.ts](src/providers/CommentSidebarProvider.ts):
+2. **Create CommentSidebarProvider** in [src/providers/CommentSidebarProvider.ts](src/providers/CommentSidebarProvider.ts):
    - Implements `WebviewViewProvider` for sidebar panel
    - Renders comment list with HTML/CSS (no React needed for MVP)
    - Renders nested replies under each comment
@@ -66,12 +66,12 @@ A VS Code extension that enables inline commenting in Markdown files with a dedi
    - Author-based edit permissions (only own comments/replies editable)
    - Orphaned comment indicators with re-anchor button
 
-5. **Implement two-way navigation**:
+3. **Implement two-way navigation**:
    - Sidebar → Editor: On comment click, use `editor.revealRange()` + flash decoration
    - Editor → Sidebar: On text selection, command `markco.addComment` opens sidebar form (auto-selects word/line if no selection)
    - Use `vscode.commands.executeCommand` for cross-component communication
 
-6. **Wire up event listeners** in [src/extension.ts](src/extension.ts):
+4. **Wire up event listeners** in [src/extension.ts](src/extension.ts):
    - `onDidChangeActiveTextEditor` - Refresh decorations and sidebar
    - `onDidChangeTextDocument` - Reconcile anchors, update decorations
    - `onDidSaveTextDocument` - Persist any pending anchor updates
@@ -115,6 +115,7 @@ Comments are stored as a JSON block at the end of the Markdown file, wrapped in 
 ```
 
 **Benefits:**
+
 - Main Markdown content stays clean and readable
 - Single file - portable, works with Git
 - Structured JSON is easy to parse/validate
@@ -125,7 +126,7 @@ Comments are stored as a JSON block at the end of the Markdown file, wrapped in 
 
 ### File Structure
 
-```
+```ascii
 markco/
 ├── package.json
 ├── tsconfig.json
@@ -147,3 +148,37 @@ markco/
     ├── preview.css               # Preview highlighting styles
     └── markco.png                # Extension icon
 ```
+
+<!-- markco-comments
+{
+  "version": 2,
+  "comments": [
+    {
+      "id": "202ba2e2-78e6-410e-9274-33c4069fac71",
+      "anchor": {
+        "text": "A VS Code extension that enables inline commenting in Markdown files with a dedicated comment sidebar for navigation and management. Uses VS Code's native text editor with `TextEditorDecorationType` for highlighting, a `WebviewViewProvider` for the sidebar panel, and a markdown-it plugin for preview highlighting.",
+        "startLine": 2,
+        "startChar": 0,
+        "endLine": 2,
+        "endChar": 314
+      },
+      "content": "Nice overview",
+      "author": "Oren Maoz",
+      "createdAt": "2026-01-22T10:36:15.701Z"
+    },
+    {
+      "id": "7c2fe2ce-8732-46b8-be07-020eb1c86d32",
+      "anchor": {
+        "text": "Check grammar\"",
+        "startLine": 19,
+        "startChar": 43,
+        "endLine": 19,
+        "endChar": 57
+      },
+      "content": "What does it mean?",
+      "author": "Oren Maoz",
+      "createdAt": "2026-01-22T10:47:31.744Z"
+    }
+  ]
+}
+-->

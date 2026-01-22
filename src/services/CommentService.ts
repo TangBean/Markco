@@ -27,17 +27,57 @@ function restoreFromStorage(text: string): string {
 }
 
 /**
- * Check if a position in text is inside a code fence (``` blocks)
+ * Check if a position in text is inside a code fence (``` blocks) or inline code (` `)
  */
-function isInsideCodeFence(text: string, position: number): boolean {
+function isInsideCodeContext(text: string, position: number): boolean {
   const beforeText = text.substring(0, position);
+  
+  // Check for code fences (``` blocks)
   const fenceMatches = beforeText.match(/```/g);
-  // If odd number of ``` before position, we're inside a code fence
-  return fenceMatches !== null && fenceMatches.length % 2 === 1;
+  if (fenceMatches !== null && fenceMatches.length % 2 === 1) {
+    return true;
+  }
+  
+  // Quick check: if there's a backtick immediately before position (like `<!-- markco-comments)
+  // then we're inside inline code
+  if (position > 0 && text[position - 1] === '`') {
+    // Make sure it's not a code fence (```)
+    if (!(position >= 3 && text.substring(position - 3, position) === '```')) {
+      return true;
+    }
+  }
+  
+  // Check for inline code - find the last backtick before position
+  // and check if there's a matching closing backtick after position on the same line
+  const lastBacktickIndex = beforeText.lastIndexOf('`');
+  if (lastBacktickIndex !== -1) {
+    // Make sure it's not part of a code fence
+    const isCodeFenceBacktick = beforeText.substring(lastBacktickIndex).startsWith('```');
+    if (!isCodeFenceBacktick) {
+      // Check if we're on the same line and there's a closing backtick
+      const lineStart = beforeText.lastIndexOf('\n', lastBacktickIndex) + 1;
+      const lineEnd = text.indexOf('\n', position);
+      const line = text.substring(lineStart, lineEnd === -1 ? text.length : lineEnd);
+      const positionInLine = position - lineStart;
+      
+      // Count backticks before and after position in this line
+      const beforeInLine = line.substring(0, positionInLine);
+      const afterInLine = line.substring(positionInLine);
+      const backticksBeforeInLine = (beforeInLine.match(/(?<!`)`(?!`)/g) || []).length;
+      const backticksAfterInLine = (afterInLine.match(/(?<!`)`(?!`)/g) || []).length;
+      
+      // If odd number of single backticks before position in line and at least one after, we're inside inline code
+      if (backticksBeforeInLine % 2 === 1 && backticksAfterInLine > 0) {
+        return true;
+      }
+    }
+  }
+  
+  return false;
 }
 
 /**
- * Find the actual comment block position, ignoring those inside code fences
+ * Find the actual comment block position, ignoring those inside code fences or inline code
  */
 function findCommentBlockStart(text: string): number {
   let searchStart = text.length;
@@ -48,8 +88,8 @@ function findCommentBlockStart(text: string): number {
       return -1;
     }
     
-    // Check if this occurrence is inside a code fence
-    if (!isInsideCodeFence(text, index)) {
+    // Check if this occurrence is inside a code context (fence or inline)
+    if (!isInsideCodeContext(text, index)) {
       return index;
     }
     
@@ -112,6 +152,13 @@ export class CommentService {
 
     const jsonStart = startIndex + COMMENT_BLOCK_START.length;
     const jsonText = text.substring(jsonStart, endIndex).trim();
+
+    // Validate that the content looks like a JSON object before parsing
+    // This prevents errors when finding the marker inside inline code like `<!-- markco-comments ... -->`
+    if (!jsonText.startsWith('{')) {
+      this.commentCache.set(uri, []);
+      return [];
+    }
 
     try {
       const data: CommentData = JSON.parse(jsonText);

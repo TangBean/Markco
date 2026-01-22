@@ -98,47 +98,106 @@ function isInsideCodeFence(text: string, position: number): boolean {
 }
 
 /**
+ * Checks if a position in the source is inside inline code (backticks).
+ */
+function isInsideInlineCode(text: string, position: number): boolean {
+  // Quick check: if there's a backtick immediately before position (like `<!-- markco-comments)
+  // then we're inside inline code
+  if (position > 0 && text[position - 1] === '`') {
+    // Make sure it's not a code fence (```)
+    if (!(position >= 3 && text.substring(position - 3, position) === '```')) {
+      return true;
+    }
+  }
+  
+  const textBefore = text.substring(0, position);
+  const lastBacktickIndex = textBefore.lastIndexOf('`');
+  
+  if (lastBacktickIndex === -1) {
+    return false;
+  }
+  
+  // Make sure it's not part of a code fence
+  const isCodeFenceBacktick = textBefore.substring(lastBacktickIndex).startsWith('```');
+  if (isCodeFenceBacktick) {
+    return false;
+  }
+  
+  // Check if we're on the same line and there's a closing backtick
+  const lineStart = textBefore.lastIndexOf('\n', lastBacktickIndex) + 1;
+  const lineEnd = text.indexOf('\n', position);
+  const line = text.substring(lineStart, lineEnd === -1 ? text.length : lineEnd);
+  const positionInLine = position - lineStart;
+  
+  // Count single backticks (not triple) before and after position in this line
+  const beforeInLine = line.substring(0, positionInLine);
+  const afterInLine = line.substring(positionInLine);
+  const backticksBeforeInLine = (beforeInLine.match(/(?<!`)`(?!`)/g) || []).length;
+  const backticksAfterInLine = (afterInLine.match(/(?<!`)`(?!`)/g) || []).length;
+  
+  // If odd number of single backticks before position in line and at least one after, we're inside inline code
+  return backticksBeforeInLine % 2 === 1 && backticksAfterInLine > 0;
+}
+
+/**
  * Parses the markco-comments JSON block from markdown source.
+ * Searches backwards to find the last valid (non-code-context) comment block.
  */
 function parseCommentsFromSource(src: string): Comment[] {
-  const blockStart = src.lastIndexOf(COMMENT_BLOCK_START);
-  if (blockStart === -1) {
-    return [];
-  }
-
-  // Check if inside code fence
-  if (isInsideCodeFence(src, blockStart)) {
-    return [];
-  }
-
-  const blockEnd = src.indexOf(COMMENT_BLOCK_END, blockStart + COMMENT_BLOCK_START.length);
-  if (blockEnd === -1) {
-    return [];
-  }
-
-  const jsonStart = blockStart + COMMENT_BLOCK_START.length;
-  const jsonText = src.substring(jsonStart, blockEnd).trim();
-
-  try {
-    const data: CommentData = JSON.parse(jsonText);
-    if (!data.comments || !Array.isArray(data.comments)) {
+  let searchStart = src.length;
+  
+  while (searchStart > 0) {
+    const blockStart = src.lastIndexOf(COMMENT_BLOCK_START, searchStart - 1);
+    if (blockStart === -1) {
       return [];
     }
 
-    // Restore sanitized text and filter out orphaned comments
-    return data.comments
-      .filter(c => !c.orphaned)
-      .map(comment => ({
-        ...comment,
-        anchor: {
-          ...comment.anchor,
-          text: restoreFromStorage(comment.anchor.text)
-        },
-        content: restoreFromStorage(comment.content)
-      }));
-  } catch {
-    return [];
+    // Check if inside code fence or inline code
+    if (isInsideCodeFence(src, blockStart) || isInsideInlineCode(src, blockStart)) {
+      searchStart = blockStart;
+      continue;
+    }
+
+    const blockEnd = src.indexOf(COMMENT_BLOCK_END, blockStart + COMMENT_BLOCK_START.length);
+    if (blockEnd === -1) {
+      searchStart = blockStart;
+      continue;
+    }
+
+    const jsonStart = blockStart + COMMENT_BLOCK_START.length;
+    const jsonText = src.substring(jsonStart, blockEnd).trim();
+
+    // Validate that the content looks like JSON before parsing
+    if (!jsonText.startsWith('{')) {
+      searchStart = blockStart;
+      continue;
+    }
+
+    try {
+      const data: CommentData = JSON.parse(jsonText);
+      if (!data.comments || !Array.isArray(data.comments)) {
+        return [];
+      }
+
+      // Restore sanitized text and filter out orphaned comments
+      return data.comments
+        .filter(c => !c.orphaned)
+        .map(comment => ({
+          ...comment,
+          anchor: {
+            ...comment.anchor,
+            text: restoreFromStorage(comment.anchor.text)
+          },
+          content: restoreFromStorage(comment.content)
+        }));
+    } catch {
+      // Invalid JSON, try searching before this position
+      searchStart = blockStart;
+      continue;
+    }
   }
+  
+  return [];
 }
 
 /**

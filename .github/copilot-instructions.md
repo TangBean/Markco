@@ -50,7 +50,7 @@ Two decoration types exist: normal and focused. `setFocusedComment()` controls w
 - Changed user-facing behavior
 - Screenshots if UI changes significantly
 
-**Spec Updates**: Major architectural changes or new features should be reflected in `spec/plan-comMark.md` to keep design documentation current.
+**Spec Updates**: Major architectural changes or new features should be reflected in `spec/Markco.md` to keep design documentation current.
 
 ## Development Commands
 
