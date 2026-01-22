@@ -1,0 +1,75 @@
+/**
+ * Markco Preview Styles
+ * 
+ * Styles for commented text highlights in the Markdown preview.
+ * These styles are injected into the VS Code Markdown preview via
+ * the markdown.previewStyles contribution point.
+ */
+
+/* Base highlight style for commented text */
+.markco-highlight {
+  background-color: rgba(255, 212, 0, 0.3);
+  border-bottom: 2px solid rgba(255, 212, 0, 0.8);
+  border-radius: 2px;
+  padding: 0 2px;
+  cursor: default;
+  position: relative;
+}
+
+/* Hover effect */
+.markco-highlight:hover {
+  background-color: rgba(255, 212, 0, 0.5);
+}
+
+/* Resolved comments - more subtle styling */
+.markco-highlight.markco-resolved {
+  background-color: rgba(128, 128, 128, 0.2);
+  border-bottom-color: rgba(128, 128, 128, 0.5);
+}
+
+.markco-highlight.markco-resolved:hover {
+  background-color: rgba(128, 128, 128, 0.3);
+}
+
+/* Comment indicator icon (optional - shows a small comment icon) */
+.markco-highlight::after {
+  content: '💬';
+  font-size: 0.7em;
+  margin-left: 2px;
+  opacity: 0.7;
+  vertical-align: super;
+}
+
+.markco-highlight.markco-resolved::after {
+  content: '✓';
+  color: #6a9955;
+}
+
+/* Dark theme adjustments */
+@media (prefers-color-scheme: dark) {
+  .markco-highlight {
+    background-color: rgba(255, 212, 0, 0.25);
+    border-bottom-color: rgba(255, 212, 0, 0.7);
+  }
+
+  .markco-highlight:hover {
+    background-color: rgba(255, 212, 0, 0.4);
+  }
+
+  .markco-highlight.markco-resolved {
+    background-color: rgba(128, 128, 128, 0.15);
+    border-bottom-color: rgba(128, 128, 128, 0.4);
+  }
+}
+
+/* VS Code theme variable overrides (when available) */
+body.vscode-dark .markco-highlight,
+body.vscode-high-contrast .markco-highlight {
+  background-color: rgba(255, 212, 0, 0.25);
+  border-bottom-color: rgba(255, 212, 0, 0.7);
+}
+
+body.vscode-light .markco-highlight {
+  background-color: rgba(255, 212, 0, 0.3);
+  border-bottom-color: rgba(255, 212, 0, 0.8);
+}

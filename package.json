@@ -109,7 +109,11 @@
           "description": "Border color for comment highlights"
         }
       }
-    }
+    },
+    "markdown.markdownItPlugins": true,
+    "markdown.previewStyles": [
+      "./media/preview.css"
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
@@ -122,6 +126,7 @@
   },
   "devDependencies": {
     "@types/chai": "^5.2.3",
+    "@types/markdown-it": "^14.1.2",
     "@types/mocha": "^10.0.10",
     "@types/node": "^20.10.0",
     "@types/sinon": "^21.0.0",

@@ -42,6 +42,14 @@ Comments use position anchors that can become stale after document edits. `recon
 ### Decoration Types
 Two decoration types exist: normal and focused. `setFocusedComment()` controls which comment gets enhanced highlighting.
 
+## Documentation
+
+**README Updates**: When adding new functionality, always update `README.md` to document:
+- New commands and their keybindings
+- New configuration settings
+- Changed user-facing behavior
+- Screenshots if UI changes significantly
+
 ## Development Commands
 
 ```bash

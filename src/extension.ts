@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { CommentService } from './services/CommentService';
 import { CommentDecorator } from './decorators/CommentDecorator';
 import { CommentSidebarProvider } from './providers/CommentSidebarProvider';
+import { markcoPreviewPlugin } from './markdown/markcoPreviewPlugin';
 
 let commentService: CommentService;
 let commentDecorator: CommentDecorator;
@@ -255,6 +256,15 @@ export function activate(context: vscode.ExtensionContext) {
       commentDecorator.dispose();
     }
   });
+
+  // Return markdown-it plugin for preview highlighting
+  console.log('Markco: Returning extendMarkdownIt from activate()');
+  return {
+    extendMarkdownIt(md: any) {
+      console.log('Markco: extendMarkdownIt called!');
+      return md.use(markcoPreviewPlugin);
+    }
+  };
 }
 
 /**
