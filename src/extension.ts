@@ -115,9 +115,9 @@ export function activate(context: vscode.ExtensionContext) {
         return;
       }
       
+      // If no text is selected, expand selection based on cursor position
       if (editor.selection.isEmpty) {
-        vscode.window.showErrorMessage('Please select some text to comment on');
-        return;
+        editor.selection = expandSelectionAtCursor(editor.document, editor.selection.active);
       }
       
       sidebarProvider.showAddCommentForm(true);
@@ -130,10 +130,11 @@ export function activate(context: vscode.ExtensionContext) {
         return;
       }
 
-      const selection = editor.selection;
+      let selection = editor.selection;
+      // If no text is selected, expand selection based on cursor position
       if (selection.isEmpty) {
-        vscode.window.showErrorMessage('Please select some text to comment on');
-        return;
+        selection = expandSelectionAtCursor(editor.document, selection.active);
+        editor.selection = selection;
       }
 
       const comment = await commentService.addComment(editor.document, selection, content);
@@ -256,6 +257,44 @@ export function activate(context: vscode.ExtensionContext) {
   });
 }
 
+/**
+ * Expands an empty selection to the containing word (including hyphens) or full line.
+ * If cursor is at the beginning or end of the line, selects the entire line.
+ * Otherwise, selects the word at the cursor position (including hyphenated words).
+ */
+function expandSelectionAtCursor(document: vscode.TextDocument, position: vscode.Position): vscode.Selection {
+  const line = document.lineAt(position.line);
+  const lineText = line.text;
+  const charIndex = position.character;
+
+  // If cursor is at beginning or end of line (or line is only whitespace), select entire line
+  const trimmedLine = lineText.trim();
+  if (charIndex === 0 || charIndex >= lineText.length || trimmedLine.length === 0) {
+    return new vscode.Selection(line.range.start, line.range.end);
+  }
+
+  // Find word boundaries including hyphens
+  // Word characters: letters, numbers, hyphens
+  const wordPattern = /[\w-]+/g;
+  let match: RegExpExecArray | null;
+  
+  while ((match = wordPattern.exec(lineText)) !== null) {
+    const start = match.index;
+    const end = start + match[0].length;
+    
+    // Check if cursor is within this word
+    if (charIndex >= start && charIndex <= end) {
+      return new vscode.Selection(
+        new vscode.Position(position.line, start),
+        new vscode.Position(position.line, end)
+      );
+    }
+  }
+
+  // If no word found at cursor, select entire line
+  return new vscode.Selection(line.range.start, line.range.end);
+}
+
 async function addCommentCommand() {
   const editor = vscode.window.activeTextEditor;
   if (!editor || editor.document.languageId !== 'markdown') {
@@ -263,10 +302,13 @@ async function addCommentCommand() {
     return;
   }
 
-  const selection = editor.selection;
+  let selection = editor.selection;
+  
+  // If no text is selected, expand selection based on cursor position
   if (selection.isEmpty) {
-    vscode.window.showErrorMessage('Please select some text to comment on');
-    return;
+    selection = expandSelectionAtCursor(editor.document, selection.active);
+    // Update editor selection to show what will be commented
+    editor.selection = selection;
   }
 
   // Show the sidebar and open the add comment form
