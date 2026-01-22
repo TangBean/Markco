@@ -45,6 +45,72 @@
   color: #6a9955;
 }
 
+/* Code block highlights - no emoji inside to avoid breaking formatting */
+.markco-highlight-code {
+  background-color: rgba(255, 212, 0, 0.3);
+  border-radius: 2px;
+}
+
+.markco-highlight-code.markco-resolved {
+  background-color: rgba(128, 128, 128, 0.2);
+}
+
+/* Wrapper for commented code blocks - shows emoji at block level */
+.markco-code-commented {
+  position: relative;
+}
+
+.markco-code-commented::before {
+  content: '💬';
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  font-size: 1em;
+  opacity: 0.8;
+  z-index: 1;
+}
+
+.markco-code-commented.markco-resolved::before {
+  content: '✓';
+  color: #6a9955;
+}
+
+/* Diagram blocks (mermaid, etc.) - indicator with border since no inline highlights */
+.markco-code-commented.markco-diagram {
+  border: 2px solid rgba(255, 212, 0, 0.5);
+  border-radius: 4px;
+  padding: 4px;
+}
+
+.markco-code-commented.markco-diagram.markco-resolved {
+  border-color: rgba(128, 128, 128, 0.4);
+}
+
+/* Diagram indicator - appears before diagram blocks */
+.markco-diagram-indicator {
+  display: block;
+  text-align: right;
+  margin-bottom: -8px;
+  position: relative;
+  z-index: 1;
+  cursor: default;
+}
+
+.markco-diagram-indicator::after {
+  content: '💬';
+  font-size: 1.2em;
+  opacity: 0.8;
+  padding: 2px 8px;
+  background: rgba(255, 212, 0, 0.3);
+  border-radius: 4px 4px 0 0;
+}
+
+.markco-diagram-indicator.markco-resolved::after {
+  content: '✓';
+  color: #6a9955;
+  background: rgba(128, 128, 128, 0.2);
+}
+
 /* Dark theme adjustments */
 @media (prefers-color-scheme: dark) {
   .markco-highlight {
@@ -60,6 +126,14 @@
     background-color: rgba(128, 128, 128, 0.15);
     border-bottom-color: rgba(128, 128, 128, 0.4);
   }
+
+  .markco-highlight-code {
+    background-color: rgba(255, 212, 0, 0.25);
+  }
+
+  .markco-highlight-code.markco-resolved {
+    background-color: rgba(128, 128, 128, 0.15);
+  }
 }
 
 /* VS Code theme variable overrides (when available) */
@@ -69,7 +143,16 @@ body.vscode-high-contrast .markco-highlight {
   border-bottom-color: rgba(255, 212, 0, 0.7);
 }
 
+body.vscode-dark .markco-highlight-code,
+body.vscode-high-contrast .markco-highlight-code {
+  background-color: rgba(255, 212, 0, 0.25);
+}
+
 body.vscode-light .markco-highlight {
   background-color: rgba(255, 212, 0, 0.3);
   border-bottom-color: rgba(255, 212, 0, 0.8);
+}
+
+body.vscode-light .markco-highlight-code {
+  background-color: rgba(255, 212, 0, 0.3);
 }

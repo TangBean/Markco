@@ -23,7 +23,43 @@ A VS Code extension that enables inline commenting in Markdown files with a dedi
 └──────────────────────────────────┴──────────────────────────┘
 ```
 
-### Steps
+## Components
+
+```mermaid
+flowchart TB
+    subgraph VSCode["VS Code"]
+        EXT["extension.ts<br/>Entry Point"]
+        
+        subgraph Services
+            CS["CommentService<br/>CRUD, Storage, Anchors"]
+        end
+        
+        subgraph UI
+            CD["CommentDecorator<br/>Text Highlighting"]
+            CSP["CommentSidebarProvider<br/>Webview Panel"]
+            MPP["markcoPreviewPlugin<br/>Preview Highlights"]
+        end
+        
+        subgraph Storage
+            MD["Markdown File<br/>JSON Comment Block"]
+        end
+    end
+    
+    EXT --> CS
+    EXT --> CD
+    EXT --> CSP
+    EXT --> MPP
+    
+    CS <--> MD
+    CS --> CD
+    CS --> CSP
+    
+    CSP <-->|postMessage| EXT
+    CD -->|decorations| VSCode
+    MPP -->|markdown-it| VSCode
+```
+
+## Steps
 
 1. **Initialize extension project structure** with:
    - [package.json](package.json) - Extension manifest with `views`, `viewsContainers`, commands, activation events
@@ -178,6 +214,19 @@ markco/
       "content": "What does it mean?",
       "author": "Oren Maoz",
       "createdAt": "2026-01-22T10:47:31.744Z"
+    },
+    {
+      "id": "4081a9db-609c-48c6-add3-f07a16b6259d",
+      "anchor": {
+        "text": "CommentService",
+        "startLine": 33,
+        "startChar": 16,
+        "endLine": 33,
+        "endChar": 30
+      },
+      "content": "Is this the right place to add the configuration and settings for Marcko?",
+      "author": "Oren Maoz",
+      "createdAt": "2026-01-22T11:29:21.246Z"
     }
   ]
 }

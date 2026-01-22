@@ -260,15 +260,42 @@ function escapeHtml(text: string): string {
 }
 
 /**
+ * Languages where inline highlighting would break rendering.
+ * These get block-level indicator only with aggregated tooltip.
+ */
+const DIAGRAM_LANGUAGES = new Set([
+  'mermaid',
+  'plantuml',
+  'dot',
+  'graphviz',
+  'd2',
+  'nomnoml',
+  'svgbob',
+  'wavedrom',
+  'vega',
+  'vega-lite'
+]);
+
+/**
+ * Checks if a fence language is a diagram type that shouldn't have inline highlighting.
+ */
+function isDiagramLanguage(info: string): boolean {
+  const lang = info.toLowerCase().trim().split(/\s+/)[0]; // Get first word (language)
+  return DIAGRAM_LANGUAGES.has(lang);
+}
+
+/**
  * Processes fence (code block) tokens to wrap anchor text in highlight spans.
  * Fence tokens have content directly in token.content rather than children.
+ * For diagram languages (mermaid, etc.), inserts indicator before block without modifying content.
  */
 function processFenceTokens(
   tokens: Token[],
   lineComments: Map<number, Comment[]>,
   TokenCtor: TokenConstructor
 ): void {
-  for (let i = 0; i < tokens.length; i++) {
+  // Process in reverse to safely insert tokens without messing up indices
+  for (let i = tokens.length - 1; i >= 0; i--) {
     const token = tokens[i];
     
     // Only process fence tokens with line mapping
@@ -299,6 +326,31 @@ function processFenceTokens(
     const content = token.content;
     const info = (token as unknown as { info: string }).info || ''; // language info
     
+    // Check if this is a diagram language (mermaid, plantuml, etc.)
+    // Diagrams can't have inline highlighting - it breaks their parsers
+    // Insert indicator BEFORE the fence token and leave fence untouched
+    if (isDiagramLanguage(info)) {
+      console.log('Markco: Diagram language detected:', info, '- inserting indicator before block');
+      
+      // Aggregate all comment contents for the tooltip
+      const allResolved = relevantComments.every(c => c.resolved);
+      const tooltipLines = relevantComments.map(c => {
+        const prefix = c.resolved ? '✓ ' : '';
+        const anchorPreview = c.anchor.text.substring(0, 30) + (c.anchor.text.length > 30 ? '...' : '');
+        return `${prefix}"${anchorPreview}": ${c.content}`;
+      });
+      const aggregatedTooltip = escapeHtml(tooltipLines.join('\n'));
+      
+      // Create an indicator token to insert before the fence
+      const indicatorToken = new TokenCtor('html_block', '', 0);
+      const wrapperResolvedClass = allResolved ? ' markco-resolved' : '';
+      indicatorToken.content = `<div class="markco-diagram-indicator${wrapperResolvedClass}" title="${aggregatedTooltip}"></div>\n`;
+      
+      // Insert indicator before the fence token
+      tokens.splice(i, 0, indicatorToken);
+      continue;
+    }
+    
     // Find all anchor matches and their positions
     const matches: Array<{ start: number; end: number; comment: Comment }> = [];
     
@@ -327,6 +379,7 @@ function processFenceTokens(
     // Build new content with highlight spans
     let newContent = '';
     let pos = 0;
+    let hasResolved = false;
     
     for (const match of matches) {
       // Add text before this match (escaped)
@@ -334,11 +387,14 @@ function processFenceTokens(
         newContent += escapeHtml(content.substring(pos, match.start));
       }
       
-      // Add highlighted text
+      // Add highlighted text - use markco-highlight-code to avoid emoji inside code
       const resolvedClass = match.comment.resolved ? ' markco-resolved' : '';
+      if (match.comment.resolved) {
+        hasResolved = true;
+      }
       const tooltipText = escapeHtml(match.comment.content);
       const highlightedText = escapeHtml(content.substring(match.start, match.end));
-      newContent += `<span class="markco-highlight${resolvedClass}" data-comment-id="${match.comment.id}" title="${tooltipText}">${highlightedText}</span>`;
+      newContent += `<span class="markco-highlight-code${resolvedClass}" data-comment-id="${match.comment.id}" title="${tooltipText}">${highlightedText}</span>`;
       
       pos = match.end;
     }
@@ -349,10 +405,12 @@ function processFenceTokens(
     }
     
     // Convert fence token to html_block with pre/code wrapper
+    // Wrap in div with markco-code-commented class to show emoji at block level
     token.type = 'html_block';
     token.tag = '';
     const langClass = info ? ` class="language-${escapeHtml(info)}"` : '';
-    token.content = `<pre><code${langClass}>${newContent}</code></pre>\n`;
+    const wrapperResolvedClass = hasResolved ? ' markco-resolved' : '';
+    token.content = `<div class="markco-code-commented${wrapperResolvedClass}"><pre><code${langClass}>${newContent}</code></pre></div>\n`;
   }
 }
 
