@@ -480,6 +480,7 @@ export class CommentService {
 
   /**
    * Find anchor text in document, searching near expected position first
+   * Excludes the markco comment block to prevent false matches against stored anchor text
    */
   private findAnchorInDocument(
     document: vscode.TextDocument,
@@ -487,12 +488,46 @@ export class CommentService {
   ): CommentAnchor | null {
     const searchText = anchor.text;
     
-    // Full document search for multi-line text
+    // Get document text, but exclude the markco comment block to prevent matching anchor text
+    // that appears in the JSON storage (which would cause anchors to point to the comment block)
     const fullText = document.getText();
-    const index = fullText.indexOf(searchText);
+    const commentBlockStart = findCommentBlockStart(fullText);
+    
+    let searchableText: string;
+    if (commentBlockStart !== -1) {
+      // Find the end of the markco comment block
+      const commentBlockEnd = fullText.indexOf(COMMENT_BLOCK_END, commentBlockStart);
+      if (commentBlockEnd !== -1) {
+        // Exclude only the markco block, keep content before and after
+        searchableText = fullText.substring(0, commentBlockStart) + 
+                         fullText.substring(commentBlockEnd + COMMENT_BLOCK_END.length);
+      } else {
+        // No closing tag found, exclude from start to end
+        searchableText = fullText.substring(0, commentBlockStart);
+      }
+    } else {
+      searchableText = fullText;
+    }
+    
+    const index = searchableText.indexOf(searchText);
     if (index !== -1) {
-      const startPos = document.positionAt(index);
-      const endPos = document.positionAt(index + searchText.length);
+      // The index is in the searchable text (with markco block removed)
+      // We need to map back to the original document position
+      // If the match is before the comment block, the position is the same
+      // If the match would be after where the comment block was, we need to adjust
+      let originalIndex = index;
+      if (commentBlockStart !== -1 && index >= commentBlockStart) {
+        // The match is in text that was after the comment block
+        // Add back the length of the removed comment block
+        const commentBlockEnd = fullText.indexOf(COMMENT_BLOCK_END, commentBlockStart);
+        if (commentBlockEnd !== -1) {
+          const removedLength = (commentBlockEnd + COMMENT_BLOCK_END.length) - commentBlockStart;
+          originalIndex = index + removedLength;
+        }
+      }
+      
+      const startPos = document.positionAt(originalIndex);
+      const endPos = document.positionAt(originalIndex + searchText.length);
       return {
         text: searchText,
         startLine: startPos.line,

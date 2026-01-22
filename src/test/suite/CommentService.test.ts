@@ -255,6 +255,65 @@ suite('CommentService Test Suite', () => {
       assert.ok(userName.length > 0);
     });
   });
+
+  suite('reconcileAnchors', () => {
+    test('should not match anchor text found only in comment block', async () => {
+      // This tests the bug fix: when anchor text is edited/deleted, 
+      // findAnchorInDocument should NOT find it in the JSON comment block
+      const anchorText = 'unique anchor text';
+      const commentData = {
+        version: 2,
+        comments: [
+          {
+            id: 'test-comment',
+            anchor: { text: anchorText, startLine: 0, startChar: 2, endLine: 0, endChar: 20 },
+            content: 'A comment',
+            author: 'testuser',
+            createdAt: '2024-01-01T00:00:00.000Z',
+            orphaned: false
+          }
+        ]
+      };
+      // Document where the anchor text was DELETED from content but still exists in comment block JSON
+      const documentText = `# Different text now\n\n<!-- markco-comments\n${JSON.stringify(commentData, null, 2)}\n-->`;
+      const mockDocument = createMockDocument(documentText);
+      
+      // Parse and then reconcile - should mark as orphaned since text only exists in comment block
+      commentService.parseComments(mockDocument);
+      await commentService.reconcileAnchors(mockDocument);
+      
+      const comments = commentService.getComments(mockDocument);
+      assert.strictEqual(comments.length, 1);
+      assert.strictEqual(comments[0].orphaned, true, 'Comment should be orphaned when anchor text only exists in comment block');
+    });
+
+    test('should find anchor text that exists in document content', async () => {
+      const anchorText = 'Hello World';
+      const commentData = {
+        version: 2,
+        comments: [
+          {
+            id: 'test-comment',
+            anchor: { text: anchorText, startLine: 0, startChar: 2, endLine: 0, endChar: 13 },
+            content: 'A comment',
+            author: 'testuser',
+            createdAt: '2024-01-01T00:00:00.000Z',
+            orphaned: false
+          }
+        ]
+      };
+      // Document where the anchor text EXISTS in the content
+      const documentText = `# Hello World\n\nSome other text\n\n<!-- markco-comments\n${JSON.stringify(commentData, null, 2)}\n-->`;
+      const mockDocument = createMockDocument(documentText);
+      
+      commentService.parseComments(mockDocument);
+      await commentService.reconcileAnchors(mockDocument);
+      
+      const comments = commentService.getComments(mockDocument);
+      assert.strictEqual(comments.length, 1);
+      assert.strictEqual(comments[0].orphaned, false, 'Comment should NOT be orphaned when anchor text exists in content');
+    });
+  });
 });
 
 // Helper functions to create mock VS Code objects
