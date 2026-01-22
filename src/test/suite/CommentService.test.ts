@@ -267,8 +267,9 @@ suite('CommentService Test Suite', () => {
       const comments = commentService.getComments(mockDocument);
       assert.strictEqual(comments.length, 2);
       // Both comments should NOT be orphaned since their anchor text exists in the content
-      assert.strictEqual(comments[0].orphaned, false, 'First comment should NOT be orphaned');
-      assert.strictEqual(comments[1].orphaned, false, 'Second comment should NOT be orphaned');
+      // Note: orphaned may be undefined or false when not orphaned
+      assert.ok(!comments[0].orphaned, 'First comment should NOT be orphaned');
+      assert.ok(!comments[1].orphaned, 'Second comment should NOT be orphaned');
     });
   });
 });
