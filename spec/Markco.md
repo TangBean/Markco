@@ -80,6 +80,7 @@ flowchart TB
    - `deleteReply(document, commentId, replyId)` - Remove a reply from a comment
    - `updateReply(document, commentId, replyId, content)` - Edit reply text
    - `findReply(document, commentId, replyId)` - Look up a reply by ID
+   - `toggleThumbsUp(document, commentId, replyId?)` - Add or remove current user's thumbs up on a comment or reply
    - `reconcileAnchors(document)` - Re-match anchors after document edits
    - `getGitUserName(document)` - Get Git user.name for author field
    - `sanitizeForStorage()` / `restoreFromStorage()` - Handle `-->` in text to prevent breaking HTML comment block
@@ -94,7 +95,7 @@ flowchart TB
    - Implements `WebviewViewProvider` for sidebar panel
    - Renders comment list with HTML/CSS (no React needed for MVP)
    - Renders nested replies under each comment
-   - Handles messages: `navigateToComment`, `deleteComment`, `editComment`, `resolveComment`, `addReply`, `editReply`, `deleteReply`, `addComment`, `submitNewComment`, `reAnchorComment`
+   - Handles messages: `navigateToComment`, `deleteComment`, `editComment`, `resolveComment`, `addReply`, `editReply`, `deleteReply`, `addComment`, `submitNewComment`, `reAnchorComment`, `toggleThumbsUp`
    - `refresh()` method to update view when comments change
    - `focusComment()` method to highlight and scroll to a comment
    - `showAddCommentForm()` method to show the new comment form
@@ -135,13 +136,15 @@ Comments are stored as a JSON block at the end of the Markdown file, wrapped in 
       "createdAt": "2026-01-15T10:30:00Z",
       "resolved": false,
       "orphaned": false,
+      "thumbsUp": ["alice", "bob"],
       "replies": [
         {
           "id": "reply-uuid",
           "content": "Reply text here",
           "author": "reviewer",
           "createdAt": "2026-01-15T11:00:00Z",
-          "updatedAt": "2026-01-15T11:30:00Z"
+          "updatedAt": "2026-01-15T11:30:00Z",
+          "thumbsUp": ["alice"]
         }
       ]
     }
@@ -159,6 +162,18 @@ Comments are stored as a JSON block at the end of the Markdown file, wrapped in 
 - Position anchoring via line number + character offsets
 
 **Anchor reconciliation:** When document is edited, anchors are re-matched by searching for the `anchor.text` snippet near the stored line number, updating offsets as needed.
+
+### Thumbs Up Reactions
+
+Comments and replies support thumbs up reactions to indicate agreement or acknowledgment:
+
+- **Data structure:** `thumbsUp` array stores usernames of users who reacted
+- **Toggle behavior:** Clicking thumbs up adds current user; clicking again removes them
+- **Display:**
+  - Single reaction: Shows 👍 icon
+  - Multiple reactions: Shows 👍 with count badge (e.g., "👍 3")
+  - Tooltip: Lists all users who gave thumbs up (e.g., "alice, bob, charlie")
+- **Permissions:** Any user can add/remove their own thumbs up
 
 ### File Structure
 
